@@ -48,7 +48,7 @@
                         </div>
                     </div>
                     <div>
-                        <label class="block text-xs font-medium text-gray-500 mb-1">Meses de Construcción (Desfase)</label>
+                        <label class="block text-xs font-medium text-gray-500 mb-1">Meses de Construcción (Desfase Total)</label>
                         <div class="flex items-center gap-3">
                             <input type="range" data-sync="buildMonths" min="0" max="60" step="1" value="24" class="w-full">
                             <input type="number" data-sync="buildMonths" value="24" class="w-20 text-sm border border-gray-300 rounded p-1.5 focus:ring-blue-500 text-right">
@@ -62,8 +62,15 @@
                         </div>
                     </div>
                     <div>
-                        <label class="block text-xs font-medium text-gray-500 mb-1">Préstamo Familiar Inicial (A devolver) (€)</label>
+                        <label class="block text-xs font-medium text-indigo-500 mb-1">Meses exigidos de Cuota (Constructora)</label>
                         <div class="flex items-center gap-3">
+                            <input type="range" data-sync="builderMonths" min="0" max="60" step="1" value="24" class="w-full">
+                            <input type="number" data-sync="builderMonths" value="24" class="w-20 text-sm border border-indigo-300 bg-indigo-50 rounded p-1.5 focus:ring-blue-500 text-right font-medium">
+                        </div>
+                    </div>
+                    <div class="sm:col-span-2">
+                        <label class="block text-xs font-medium text-gray-500 mb-1">Préstamo Familiar Inicial (A devolver) (€)</label>
+                        <div class="flex items-center gap-3 sm:w-1/2 pr-3">
                             <input type="range" data-sync="familyLoan" min="0" max="150000" step="1000" value="50000" class="w-full">
                             <input type="number" data-sync="familyLoan" value="50000" class="w-28 text-sm border border-gray-300 rounded p-1.5 focus:ring-blue-500 text-right">
                         </div>
@@ -148,7 +155,6 @@
                     Fase 3: Hipoteca Actual y Venta (Al Cierre)
                 </h2>
                 
-                <!-- ESTE INPUT SOLO SE ACTIVA EN EL MODO 2 (Mercado Realista) -->
                 <div id="div_expectedSale" class="mb-5 opacity-40 pointer-events-none transition-all duration-300 p-3 rounded-lg border border-transparent">
                     <label class="block text-xs font-bold text-emerald-800 mb-1">Precio de Venta Estimado de Mercado (€)</label>
                     <div class="flex items-center gap-3">
@@ -243,7 +249,6 @@
             <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-5 sm:p-6 relative overflow-hidden">
                 <div class="absolute top-0 left-0 w-1 h-full bg-gray-600"></div>
                 
-                <!-- DUAL SOLVER UI -->
                 <div class="mb-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
                     <h3 class="text-xs font-bold text-gray-800 uppercase mb-3 flex items-center gap-2">
                         <svg class="w-4 h-4 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"></path></svg>
@@ -462,17 +467,15 @@
             const divSale = document.getElementById('div_expectedSale');
             const divEffort = document.getElementById('div_effortLimit');
             
-            if (mode === 'mode_sale') { // MODO 1: PROTEGER CUOTA
+            if (mode === 'mode_sale') { // MODO 1
                 divSale.classList.add('opacity-40', 'pointer-events-none');
                 divSale.classList.remove('bg-emerald-100', 'border-emerald-300');
                 divSale.classList.add('border-transparent');
-                
                 divEffort.classList.remove('opacity-40', 'pointer-events-none');
-            } else { // MODO 2: MERCADO REALISTA
+            } else { // MODO 2
                 divSale.classList.remove('opacity-40', 'pointer-events-none');
                 divSale.classList.add('bg-emerald-100', 'border-emerald-300');
                 divSale.classList.remove('border-transparent');
-                
                 divEffort.classList.add('opacity-40', 'pointer-events-none');
             }
             calculate();
@@ -499,12 +502,15 @@
         // --- VALIDADOR 1: ESTRÉS DE CAJA ---
         const incomeTrans = getVal('incomeTrans');
         const buildMonths = getVal('buildMonths');
+        const builderMonths = getVal('builderMonths'); // Nuevo Parámetro
         const builderQuota = getVal('builderQuota');
         
+        // La hipoteca se sigue amortizando el tiempo que dure la construcción (buildMonths)
         const amortData = amortizeExact(getVal('oldMortgageP'), getVal('oldMortgageR'), getVal('oldMortgageY'), buildMonths);
         const oldQuota = amortData.quota;
         const futureCancel = amortData.pending;
 
+        // El pico de estrés mensual se asume mientras coinciden las dos cuotas
         const totalLoad = oldQuota + builderQuota;
         const freeCash = incomeTrans - totalLoad;
         const stressPct = incomeTrans > 0 ? (totalLoad / incomeTrans) * 100 : 100;
@@ -538,8 +544,12 @@
         // --- FASE 2: COSTES OBRA NUEVA ---
         const finalBase = getVal('newPrice') * (1 + overcostPct/100);
         const totalCost = finalBase + (finalBase * getVal('iva')/100) + (finalBase * getVal('ajd')/100) + (finalBase * getVal('notary')/100) + getVal('furniture');
+        
         const familyLoan = getVal('familyLoan');
-        const alreadyPaid = familyLoan + (builderQuota * buildMonths);
+        
+        // AQUÍ APLICAMOS EL NUEVO PARÁMETRO: builderQuota * builderMonths
+        const totalBuilderQuotas = builderQuota * builderMonths; 
+        const alreadyPaid = familyLoan + totalBuilderQuotas; 
         const pendingAtDelivery = totalCost - alreadyPaid;
 
         // Variables comunes fiscales
@@ -554,7 +564,6 @@
         const yearsFuture = getVal('years');
         const maxLTV = getVal('maxLTV');
 
-        // Variables de resultado del Motor de Resolución
         let salePrice = 0, finalMortgage = 0, finalQuota = 0, finalEffort = 0, finalLtv = 0, cashForNew = 0, finalTaxes = 0;
         let isViableV2 = true;
         let statusMsg = "", statusClass = "";
@@ -564,7 +573,6 @@
         const heroExtra = document.getElementById('v2_hero_extra');
 
         if (calcMode === 'mode_sale') {
-            // MODO 1: OBJETIVO DE ESFUERZO -> BUSCAR PRECIO DE VENTA
             const maxQuotaFuture = incomeFuture * (getVal('effort') / 100);
             const newRateM = (rateFuture / 100) / 12;
             const newMonths = yearsFuture * 12;
@@ -617,7 +625,6 @@
             }
 
         } else {
-            // MODO 2: FIJAR PRECIO VENTA -> CALCULAR HIPOTECA
             salePrice = getVal('expectedSale');
             let realGain = salePrice - origPrice;
             let realBase = realGain > 0 ? realGain * (getVal('landPct') / 100) : 0;
@@ -662,11 +669,10 @@
             }
         }
 
-        // RENDERIZADO DOM
         document.getElementById('res_totalCost').textContent = fmt.format(totalCost);
         document.getElementById('res_alreadyPaid').textContent = fmt.format(alreadyPaid);
         document.getElementById('res_v2_fam').textContent = fmt.format(familyLoan);
-        document.getElementById('res_v2_prom').textContent = fmt.format(builderQuota * buildMonths);
+        document.getElementById('res_v2_prom').textContent = fmt.format(totalBuilderQuotas); // AQUÍ REFLEJA EL NUEVO PARÁMETRO
         
         statusBox.className = `mb-4 text-center py-2 rounded font-bold text-sm tracking-wide border ${statusClass}`;
         statusBox.textContent = statusMsg;
@@ -685,7 +691,6 @@
             document.getElementById('res_v2_newQuota').textContent = finalMortgage > 0 ? fmt.format(finalQuota) + ' /mes' : '0 € /mes';
             document.getElementById('res_v2_ltvReal').textContent = Math.max(0, finalLtv).toFixed(1) + ' %';
             
-            // Destino del Dinero Venta (En Modo 2, cashForNew puede ser altísimo si vendemos muy caro, topamos a lo que hace falta)
             let actualCashApplied = Math.min(Math.max(0, cashForNew), pendingAtDelivery);
             document.getElementById('res_cashForNew').textContent = fmt.format(actualCashApplied);
             document.getElementById('res_famReturn').textContent = '-' + fmt.format(familyLoan);
