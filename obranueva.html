@@ -1,0 +1,749 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel PRO: Transición a Obra Nueva</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #f3f4f6; }
+        input[type=range] { -webkit-appearance: none; width: 100%; background: transparent; }
+        input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; height: 18px; width: 18px; border-radius: 50%; background: #4f46e5; cursor: pointer; margin-top: -6px; box-shadow: 0 1px 3px rgba(0,0,0,0.3); }
+        input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 6px; cursor: pointer; background: #d1d5db; border-radius: 3px; }
+        input[type=range]:focus { outline: none; }
+        .toggle-checkbox:checked { right: 0; border-color: #4f46e5; }
+        .toggle-checkbox:checked + .toggle-label { background-color: #4f46e5; }
+        .coop-active { background-color: #fef2f2; border-color: #fca5a5; }
+    </style>
+</head>
+<body class="text-gray-800 antialiased pb-12">
+
+<div class="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8">
+    <header class="mb-8 border-b border-gray-200 pb-4">
+        <h1 class="text-2xl sm:text-3xl font-bold text-indigo-900">Simulador de Transición: Obra Nueva</h1>
+        <p class="text-sm text-gray-500 mt-1">Análisis de doble pivote: Estrés transitorio y sensibilidad al cierre.</p>
+    </header>
+
+    <div class="flex flex-col lg:flex-row gap-8">
+        
+        <!-- CONTROLES -->
+        <div class="w-full lg:w-2/3 space-y-6" id="control-panel">
+            
+            <!-- 1. TRANSICIÓN Y PAGOS DE OBRA -->
+            <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-5 sm:p-6 relative overflow-hidden">
+                <div class="absolute top-0 left-0 w-1 h-full bg-blue-500"></div>
+                <h2 class="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
+                    <svg class="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                    Fase 1: Transición y Construcción
+                </h2>
+                
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-5">
+                    <div>
+                        <label class="block text-xs font-medium text-gray-500 mb-1">Salario Neto Mes (En Transición) (€)</label>
+                        <div class="flex items-center gap-3">
+                            <input type="range" data-sync="incomeTrans" min="2000" max="10000" step="100" value="4600" class="w-full">
+                            <input type="number" data-sync="incomeTrans" value="4600" class="w-28 text-sm border border-gray-300 rounded p-1.5 focus:ring-blue-500 text-right">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-gray-500 mb-1">Meses de Construcción (Desfase)</label>
+                        <div class="flex items-center gap-3">
+                            <input type="range" data-sync="buildMonths" min="0" max="60" step="1" value="24" class="w-full">
+                            <input type="number" data-sync="buildMonths" value="24" class="w-20 text-sm border border-gray-300 rounded p-1.5 focus:ring-blue-500 text-right">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-gray-500 mb-1">Cuotas Mensuales a Constructora (€)</label>
+                        <div class="flex items-center gap-3">
+                            <input type="range" data-sync="builderQuota" min="0" max="3000" step="50" value="800" class="w-full">
+                            <input type="number" data-sync="builderQuota" value="800" class="w-28 text-sm border border-gray-300 rounded p-1.5 focus:ring-blue-500 text-right">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-gray-500 mb-1">Préstamo Familiar Inicial (A devolver) (€)</label>
+                        <div class="flex items-center gap-3">
+                            <input type="range" data-sync="familyLoan" min="0" max="150000" step="1000" value="50000" class="w-full">
+                            <input type="number" data-sync="familyLoan" value="50000" class="w-28 text-sm border border-gray-300 rounded p-1.5 focus:ring-blue-500 text-right">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 2. OBRA NUEVA: COSTES -->
+            <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-5 sm:p-6 relative overflow-hidden transition-colors duration-300" id="box-obranueva">
+                <div class="absolute top-0 left-0 w-1 h-full bg-indigo-500"></div>
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-lg font-semibold text-gray-800 flex items-center gap-2">
+                        <svg class="w-5 h-5 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5"></path></svg>
+                        Fase 2: Costes Obra Nueva
+                    </h2>
+                    <select id="buildType" class="text-sm font-semibold bg-gray-100 border-gray-300 rounded p-1.5 focus:ring-indigo-500">
+                        <option value="promotora">Promotora (Cerrado)</option>
+                        <option value="cooperativa">Cooperativa (Derrama)</option>
+                    </select>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-5">
+                    <div>
+                        <label class="block text-xs font-medium text-gray-500 mb-1">Precio Base Vivienda (€)</label>
+                        <div class="flex items-center gap-3">
+                            <input type="range" data-sync="newPrice" min="200000" max="1000000" step="5000" value="450000" class="w-full">
+                            <input type="number" data-sync="newPrice" value="450000" class="w-28 text-sm border border-gray-300 rounded p-1.5 focus:ring-indigo-500 text-right">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-indigo-500 mb-1">Valor Tasación Futura Estimado (€)</label>
+                        <div class="flex items-center gap-3">
+                            <input type="range" data-sync="appraisalPrice" min="200000" max="1000000" step="5000" value="450000" class="w-full">
+                            <input type="number" data-sync="appraisalPrice" value="450000" class="w-28 text-sm border border-indigo-300 rounded p-1.5 focus:ring-indigo-500 text-right">
+                        </div>
+                    </div>
+                    
+                    <div id="coopRiskDiv" class="opacity-30 pointer-events-none transition-opacity col-span-1 sm:col-span-2">
+                        <label class="block text-xs font-bold text-red-500 mb-1">Riesgo Sobrecoste Cooperativa (%)</label>
+                        <div class="flex items-center gap-3">
+                            <input type="range" data-sync="overcost" min="0" max="25" step="1" value="0" class="w-full">
+                            <input type="number" data-sync="overcost" value="0" class="w-24 text-sm border border-red-300 rounded p-1.5 text-right font-bold text-red-600">
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-medium text-gray-500 mb-1">IVA Obra Nueva (%)</label>
+                        <div class="flex items-center gap-3">
+                            <input type="range" data-sync="iva" min="0" max="21" step="0.5" value="10.0" class="w-full">
+                            <input type="number" data-sync="iva" value="10.0" step="0.1" class="w-20 text-sm border border-gray-300 rounded p-1.5 text-right">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-gray-500 mb-1">AJD Comunidad Autónoma (%)</label>
+                        <div class="flex items-center gap-3">
+                            <input type="range" data-sync="ajd" min="0" max="2" step="0.05" value="1.50" class="w-full">
+                            <input type="number" data-sync="ajd" value="1.50" step="0.05" class="w-20 text-sm border border-gray-300 rounded p-1.5 text-right">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-gray-500 mb-1">Vestir Casa (Mobiliario, Cocina...) (€)</label>
+                        <div class="flex items-center gap-3">
+                            <input type="range" data-sync="furniture" min="0" max="50000" step="500" value="15000" class="w-full">
+                            <input type="number" data-sync="furniture" value="15000" class="w-28 text-sm border border-gray-300 rounded p-1.5 text-right">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-gray-500 mb-1">Gastos Notaría y Registro (%)</label>
+                        <div class="flex items-center gap-3">
+                            <input type="range" data-sync="notary" min="0" max="5" step="0.1" value="1.5" class="w-full">
+                            <input type="number" data-sync="notary" value="1.5" step="0.1" class="w-20 text-sm border border-gray-300 rounded p-1.5 text-right">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 3. HIPOTECA ACTUAL Y VENTA AL CIERRE -->
+            <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-5 sm:p-6 relative overflow-hidden">
+                <div class="absolute top-0 left-0 w-1 h-full bg-emerald-500"></div>
+                <h2 class="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
+                    <svg class="w-5 h-5 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path></svg>
+                    Fase 3: Hipoteca Actual y Venta (Al Cierre)
+                </h2>
+                
+                <!-- ESTE INPUT SOLO SE ACTIVA EN EL MODO 2 (Mercado Realista) -->
+                <div id="div_expectedSale" class="mb-5 opacity-40 pointer-events-none transition-all duration-300 p-3 rounded-lg border border-transparent">
+                    <label class="block text-xs font-bold text-emerald-800 mb-1">Precio de Venta Estimado de Mercado (€)</label>
+                    <div class="flex items-center gap-3">
+                        <input type="range" data-sync="expectedSale" min="150000" max="600000" step="5000" value="320000" class="w-full">
+                        <input type="number" data-sync="expectedSale" value="320000" class="w-32 text-sm border border-emerald-400 bg-emerald-50 rounded p-1.5 focus:ring-emerald-500 text-right font-bold text-emerald-800 shadow-inner">
+                    </div>
+                    <p class="text-[10px] text-emerald-600 mt-1">* Determinará directamente el agujero a financiar en la nueva hipoteca.</p>
+                </div>
+
+                <div class="mb-5 p-4 bg-emerald-50 rounded border border-emerald-100">
+                    <h3 class="text-xs font-bold text-emerald-800 uppercase mb-3">Datos exactos Hipoteca Actual (Hoy)</h3>
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                        <div>
+                            <label class="block text-xs font-medium text-gray-600 mb-1">Capital Inicial/Actual (€)</label>
+                            <input type="number" data-sync="oldMortgageP" value="240000" class="w-full text-sm border border-gray-300 rounded p-1.5 focus:ring-emerald-500 text-right">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-gray-600 mb-1">Interés Real Puro (%)</label>
+                            <input type="number" data-sync="oldMortgageR" value="2.00" step="0.01" class="w-full text-sm border border-gray-300 rounded p-1.5 focus:ring-emerald-500 text-right">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-gray-600 mb-1">Años Restantes</label>
+                            <input type="number" data-sync="oldMortgageY" value="30" class="w-full text-sm border border-gray-300 rounded p-1.5 focus:ring-emerald-500 text-right">
+                        </div>
+                    </div>
+                    <div class="mt-3 text-xs text-emerald-700 flex justify-between items-center bg-emerald-100 p-2 rounded">
+                        <span>Cuota actual: <strong id="lbl_oldQuota">--- €</strong></span>
+                        <span>Capital a cancelar tras la obra: <strong id="lbl_futureCancel" class="text-red-600">--- €</strong></span>
+                    </div>
+                </div>
+
+                <h3 class="text-sm font-semibold text-gray-700 mb-3 border-b pb-2">Fiscalidad de Venta y Plusvalía</h3>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-5">
+                    <div>
+                        <label class="block text-xs font-medium text-gray-500 mb-1">Precio Compra Original (€)</label>
+                        <div class="flex items-center gap-3">
+                            <input type="range" data-sync="origPrice" min="100000" max="500000" step="1000" value="270000" class="w-full">
+                            <input type="number" data-sync="origPrice" value="270000" class="w-28 text-sm border border-gray-300 rounded p-1.5 text-right">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-gray-500 mb-1">Gastos Cancelación e Inmob. (€)</label>
+                        <div class="flex items-center gap-3">
+                            <input type="range" data-sync="cancelCost" min="0" max="10000" step="100" value="0" class="w-full">
+                            <input type="number" data-sync="cancelCost" value="0" class="w-28 text-sm border border-gray-300 rounded p-1.5 text-right">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-gray-500 mb-1">Valor Catastral Total (€)</label>
+                        <div class="flex items-center gap-3">
+                            <input type="range" data-sync="cadastralTotal" min="20000" max="300000" step="10" value="90655.10" class="w-full">
+                            <input type="number" data-sync="cadastralTotal" value="90655.10" class="w-28 text-sm border border-gray-300 rounded p-1.5 text-right">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-gray-500 mb-1">Porcentaje de Suelo (%)</label>
+                        <div class="flex items-center gap-3">
+                            <input type="range" data-sync="landPct" min="10" max="90" step="0.01" value="40.58" class="w-full">
+                            <input type="number" data-sync="landPct" value="40.58" class="w-24 text-sm border border-gray-300 rounded p-1.5 text-right">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-gray-500 mb-1">Tipo Impositivo Local (%)</label>
+                        <div class="flex items-center gap-3">
+                            <input type="range" data-sync="plusvaliaRate" min="10" max="30" step="0.1" value="29" class="w-full">
+                            <input type="number" data-sync="plusvaliaRate" value="29" class="w-24 text-sm border border-gray-300 rounded p-1.5 text-right">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-gray-500 mb-1">Coef. Método Objetivo</label>
+                        <div class="flex gap-2">
+                            <select id="periodSelect" class="flex-1 text-sm border border-gray-300 rounded p-1.5">
+                                <option value="0.14">Venta 1 a 2 años (0.14)</option>
+                                <option value="0.13" selected>Venta 2 a 3 años (0.13)</option>
+                                <option value="0.15">Venta 3 a 4 años (0.15)</option>
+                            </select>
+                            <input type="number" id="objectiveCoefNum" data-sync="objCoef" value="0.13" step="0.01" class="hidden">
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="mt-5 flex items-center justify-between bg-emerald-50 p-3 rounded border border-emerald-100">
+                    <label class="text-sm text-emerald-900 font-semibold">IRPF Exento por reinversión al vender</label>
+                    <div class="relative inline-block w-12 mr-2 align-middle select-none transition duration-200 ease-in">
+                        <input type="checkbox" id="irpfToggle" class="toggle-checkbox absolute block w-6 h-6 rounded-full bg-white border-4 appearance-none cursor-pointer" checked/>
+                        <label for="irpfToggle" class="toggle-label block overflow-hidden h-6 rounded-full bg-gray-300 cursor-pointer"></label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 4. PERFIL FINANCIERO (NUEVA HIPOTECA Y MOTOR DE CÁLCULO) -->
+            <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-5 sm:p-6 relative overflow-hidden">
+                <div class="absolute top-0 left-0 w-1 h-full bg-gray-600"></div>
+                
+                <!-- DUAL SOLVER UI -->
+                <div class="mb-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
+                    <h3 class="text-xs font-bold text-gray-800 uppercase mb-3 flex items-center gap-2">
+                        <svg class="w-4 h-4 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"></path></svg>
+                        Motor de Simulación: ¿Qué variable quieres calcular?
+                    </h3>
+                    <div class="flex flex-col sm:flex-row gap-4">
+                        <label class="flex-1 flex items-start gap-2 text-sm cursor-pointer bg-white p-2 rounded border border-gray-200 hover:border-indigo-400 transition">
+                            <input type="radio" name="calcMode" value="mode_sale" checked class="mt-1 text-indigo-600 focus:ring-indigo-500">
+                            <div>
+                                <strong class="block text-gray-700">Proteger Cuota</strong>
+                                <span class="text-xs text-gray-500">Fija el esfuerzo máx. y calcula el <b>Precio de Venta</b> necesario.</span>
+                            </div>
+                        </label>
+                        <label class="flex-1 flex items-start gap-2 text-sm cursor-pointer bg-white p-2 rounded border border-gray-200 hover:border-indigo-400 transition">
+                            <input type="radio" name="calcMode" value="mode_mortgage" class="mt-1 text-indigo-600 focus:ring-indigo-500">
+                            <div>
+                                <strong class="block text-gray-700">Mercado Realista</strong>
+                                <span class="text-xs text-gray-500">Fija el precio de venta y calcula tu <b>Cuota e Hipoteca Real</b>.</span>
+                            </div>
+                        </label>
+                    </div>
+                </div>
+
+                <h2 class="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
+                    <svg class="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
+                    Perfil para la Nueva Hipoteca (Al Cierre)
+                </h2>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-5">
+                    <div>
+                        <label class="block text-xs font-medium text-gray-500 mb-1">Salario Neto Mensual FUTURO (€)</label>
+                        <div class="flex items-center gap-3">
+                            <input type="range" data-sync="incomeFuture" min="2000" max="10000" step="100" value="4600" class="w-full">
+                            <input type="number" data-sync="incomeFuture" value="4600" class="w-28 text-sm border border-gray-300 rounded p-1.5 focus:ring-gray-500 text-right">
+                        </div>
+                    </div>
+                    
+                    <div id="div_effortLimit" class="transition-all duration-300">
+                        <label class="block text-xs font-bold text-indigo-600 mb-1">Límite Esfuerzo Máximo (%)</label>
+                        <div class="flex items-center gap-3">
+                            <input type="range" data-sync="effort" min="10" max="50" step="1" value="30" class="w-full">
+                            <input type="number" data-sync="effort" value="30" class="w-20 text-sm border border-indigo-300 rounded p-1.5 text-right font-bold text-indigo-700">
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-medium text-gray-500 mb-1">Plazo Nueva Hipoteca (Años)</label>
+                        <div class="flex items-center gap-3">
+                            <input type="range" data-sync="years" min="10" max="40" step="1" value="30" class="w-full">
+                            <input type="number" data-sync="years" value="30" class="w-20 text-sm border border-gray-300 rounded p-1.5 focus:ring-gray-500 text-right">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-gray-500 mb-1">Tipo de Interés Fijo (%)</label>
+                        <div class="flex items-center gap-3">
+                            <input type="range" data-sync="rate" min="0.5" max="6" step="0.05" value="2.4" class="w-full">
+                            <input type="number" data-sync="rate" value="2.4" step="0.05" class="w-20 text-sm border border-gray-300 rounded p-1.5 text-right">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-gray-500 mb-1">LTV Máximo Bancario (%)</label>
+                        <div class="flex items-center gap-3">
+                            <input type="range" data-sync="maxLTV" min="50" max="100" step="1" value="80" class="w-full">
+                            <input type="number" data-sync="maxLTV" value="80" class="w-20 text-sm border border-gray-300 rounded p-1.5 text-right">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- RESULTADOS Y VALIDACIONES -->
+        <div class="w-full lg:w-1/3 space-y-6">
+            
+            <!-- VALIDADOR 1: ESTRÉS DE CAJA (PORCENTUAL) -->
+            <div class="bg-gray-900 rounded-2xl shadow-xl border border-gray-800 p-6 text-white relative overflow-hidden">
+                <div id="val1_bg" class="absolute inset-0 bg-blue-900/20 transition-colors duration-500"></div>
+                <div class="relative z-10">
+                    <h3 class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Validador 1: Estrés Transitorio</h3>
+                    
+                    <div class="flex justify-between items-end mb-4">
+                        <div>
+                            <p class="text-[10px] text-gray-400 uppercase">Esfuerzo Transitorio sobre Ingresos</p>
+                            <span id="res_stressPct" class="text-4xl font-extrabold text-white">--- %</span>
+                        </div>
+                        <div id="val1_badge" class="px-2 py-1 rounded text-xs font-bold bg-gray-700">OK</div>
+                    </div>
+
+                    <div class="space-y-1 text-xs text-gray-300 border-t border-gray-700 pt-3">
+                        <div class="flex justify-between"><span>Ingresos Mensuales (Obra)</span><span id="v1_inc" class="text-white"></span></div>
+                        <div class="flex justify-between"><span>Cuota Hipoteca Actual</span><span id="v1_oldq" class="text-red-400"></span></div>
+                        <div class="flex justify-between"><span>Cuotas Promotora</span><span id="v1_promq" class="text-red-400"></span></div>
+                        <div class="flex justify-between mt-2 border-t border-gray-700/50 pt-2 font-semibold text-white">
+                            <span>Total Carga Mensual</span><span id="v1_totalLoad"></span>
+                        </div>
+                        <div class="flex justify-between font-medium">
+                            <span>Liquidez Libre Mensual</span><span id="v1_freeCash" class="text-emerald-400"></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- VALIDADOR 2: VIABILIDAD AL CIERRE (DUAL SOLVER) -->
+            <div class="bg-gray-900 rounded-2xl shadow-xl border border-gray-800 p-6 text-white lg:sticky lg:top-6">
+                <h3 class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Validador 2: Cierre Operación</h3>
+                
+                <div id="statusBox" class="mb-4 text-center py-2 rounded font-bold text-sm tracking-wide transition-colors">
+                    <!-- Semáforo inyectado vía JS -->
+                </div>
+
+                <p id="v2_hero_label" class="text-[10px] text-gray-400 uppercase tracking-wide">Variable Objetivo</p>
+                <div class="flex flex-col mb-6">
+                    <span id="v2_hero_value" class="text-4xl font-extrabold text-emerald-400">--- €</span>
+                    <span id="v2_hero_extra" class="text-sm font-medium mt-1 text-indigo-300"></span>
+                </div>
+
+                <!-- Gráfico de Origen de Fondos -->
+                <div class="h-32 w-full mb-4 border-b border-gray-700 pb-4 flex justify-center">
+                    <canvas id="fundingChart"></canvas>
+                </div>
+
+                <div class="space-y-3 text-sm">
+                    <div class="flex justify-between items-center text-gray-300 font-semibold bg-gray-800 p-2 rounded">
+                        <span>Coste Total Nueva Casa</span>
+                        <span id="res_totalCost" class="text-white">--- €</span>
+                    </div>
+                    
+                    <div class="flex justify-between items-center text-gray-400 text-xs mt-2">
+                        <span>Aportado en Transición</span>
+                        <span id="res_alreadyPaid" class="font-semibold text-gray-300">--- €</span>
+                    </div>
+                    <div class="pl-3 border-l-2 border-gray-700 space-y-1 mt-1 text-[10px] text-gray-500">
+                        <div class="flex justify-between"><span>Préstamo Familiar</span><span id="res_v2_fam">--- €</span></div>
+                        <div class="flex justify-between"><span>Cuotas Mensuales (Acumuladas)</span><span id="res_v2_prom">--- €</span></div>
+                    </div>
+                    
+                    <div class="flex justify-between items-center text-indigo-300 font-semibold bg-indigo-900/30 p-2 rounded mt-2">
+                        <span>Nueva Hipoteca</span>
+                        <span id="res_newMortgage">--- €</span>
+                    </div>
+                    <div class="pl-3 border-l-2 border-indigo-900 space-y-1 mt-1 text-xs text-gray-400">
+                        <div class="flex justify-between"><span>Cuota Mensual</span><span id="res_v2_newQuota" class="text-white font-medium">--- €</span></div>
+                        <div class="flex justify-between"><span>% LTV (Financiación Real)</span><span id="res_v2_ltvReal">--- %</span></div>
+                    </div>
+
+                    <!-- Destino de la Venta -->
+                    <div class="pt-3 border-t border-gray-700 space-y-1 text-xs text-gray-400">
+                        <p class="text-gray-300 font-medium mb-1">Destino del dinero de la Venta:</p>
+                        <div class="flex justify-between">
+                            <span>Resto para Pagar Casa Nueva</span>
+                            <span id="res_cashForNew" class="text-emerald-400 font-semibold">--- €</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span>Devolver Préstamo Familiar</span>
+                            <span id="res_famReturn" class="text-red-400">--- €</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span>Cancelación Hipoteca Antigua</span>
+                            <span id="res_mortgageCancel" class="text-red-400">--- €</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span>Gastos Venta, Plusvalía e IRPF</span>
+                            <span id="res_taxes" class="text-red-400">--- €</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const fmt = new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 });
+    const getVal = (id) => parseFloat(document.querySelector(`input[data-sync="${id}"]`).value) || 0;
+    let chartInstance = null;
+
+    // Tramos IRPF
+    function calculateIRPF(gain) {
+        if (gain <= 0) return 0;
+        let tax = 0; let remaining = gain;
+        if (remaining > 300000) { tax += (remaining - 300000) * 0.28; remaining = 300000; }
+        if (remaining > 200000) { tax += (remaining - 200000) * 0.27; remaining = 200000; }
+        if (remaining > 50000)  { tax += (remaining - 50000) * 0.23; remaining = 50000; }
+        if (remaining > 6000)   { tax += (remaining - 6000) * 0.21; remaining = 6000; }
+        if (remaining > 0)      { tax += remaining * 0.19; }
+        return tax;
+    }
+
+    // Amortización exacta mensual
+    function amortizeExact(principal, annualRate, totalYears, monthsPassed) {
+        if (principal <= 0 || totalYears <= 0) return { pending: 0, quota: 0 };
+        let r = annualRate / 100 / 12;
+        let n = totalYears * 12;
+        let quota = (r === 0) ? principal/n : (principal * r) / (1 - Math.pow(1 + r, -n));
+        
+        let currentP = principal;
+        for (let i = 0; i < monthsPassed; i++) {
+            if (currentP <= 0) break;
+            let interest = currentP * r;
+            let amort = quota - interest;
+            currentP -= amort;
+        }
+        return { pending: Math.max(0, currentP), quota: quota };
+    }
+
+    // Cuota estándar
+    function getQuota(principal, annualRate, totalYears) {
+        if (principal <= 0) return 0;
+        let r = annualRate / 100 / 12;
+        let n = totalYears * 12;
+        return (r === 0) ? principal/n : (principal * r) / (1 - Math.pow(1 + r, -n));
+    }
+
+    // GESTOR DE EVENTOS: DUAL SOLVER
+    document.querySelectorAll('input[name="calcMode"]').forEach(radio => {
+        radio.addEventListener('change', (e) => {
+            const mode = e.target.value;
+            const divSale = document.getElementById('div_expectedSale');
+            const divEffort = document.getElementById('div_effortLimit');
+            
+            if (mode === 'mode_sale') { // MODO 1: PROTEGER CUOTA
+                divSale.classList.add('opacity-40', 'pointer-events-none');
+                divSale.classList.remove('bg-emerald-100', 'border-emerald-300');
+                divSale.classList.add('border-transparent');
+                
+                divEffort.classList.remove('opacity-40', 'pointer-events-none');
+            } else { // MODO 2: MERCADO REALISTA
+                divSale.classList.remove('opacity-40', 'pointer-events-none');
+                divSale.classList.add('bg-emerald-100', 'border-emerald-300');
+                divSale.classList.remove('border-transparent');
+                
+                divEffort.classList.add('opacity-40', 'pointer-events-none');
+            }
+            calculate();
+        });
+    });
+
+    function calculate() {
+        const buildType = document.getElementById('buildType').value;
+        const overcostPct = buildType === 'cooperativa' ? getVal('overcost') : 0;
+        const isExemptIRPF = document.getElementById('irpfToggle').checked;
+        const calcMode = document.querySelector('input[name="calcMode"]:checked').value;
+        
+        // Estilos Coop
+        const coopDiv = document.getElementById('coopRiskDiv');
+        const boxObra = document.getElementById('box-obranueva');
+        if (buildType === 'cooperativa') {
+            coopDiv.classList.remove('opacity-30', 'pointer-events-none');
+            boxObra.classList.add('coop-active');
+        } else {
+            coopDiv.classList.add('opacity-30', 'pointer-events-none');
+            boxObra.classList.remove('coop-active');
+        }
+
+        // --- VALIDADOR 1: ESTRÉS DE CAJA ---
+        const incomeTrans = getVal('incomeTrans');
+        const buildMonths = getVal('buildMonths');
+        const builderQuota = getVal('builderQuota');
+        
+        const amortData = amortizeExact(getVal('oldMortgageP'), getVal('oldMortgageR'), getVal('oldMortgageY'), buildMonths);
+        const oldQuota = amortData.quota;
+        const futureCancel = amortData.pending;
+
+        const totalLoad = oldQuota + builderQuota;
+        const freeCash = incomeTrans - totalLoad;
+        const stressPct = incomeTrans > 0 ? (totalLoad / incomeTrans) * 100 : 100;
+
+        document.getElementById('lbl_oldQuota').textContent = fmt.format(oldQuota);
+        document.getElementById('lbl_futureCancel').textContent = fmt.format(futureCancel);
+        document.getElementById('res_stressPct').textContent = stressPct.toFixed(1) + ' %';
+        document.getElementById('v1_inc').textContent = fmt.format(incomeTrans);
+        document.getElementById('v1_oldq').textContent = '-' + fmt.format(oldQuota);
+        document.getElementById('v1_promq').textContent = '-' + fmt.format(builderQuota);
+        document.getElementById('v1_totalLoad').textContent = fmt.format(totalLoad);
+        document.getElementById('v1_freeCash').textContent = fmt.format(freeCash);
+
+        const v1_bg = document.getElementById('val1_bg');
+        const v1_badge = document.getElementById('val1_badge');
+        
+        if (stressPct >= 60) {
+            v1_bg.className = "absolute inset-0 bg-red-600/30 transition-colors duration-500";
+            v1_badge.className = "px-2 py-1 rounded text-xs font-bold bg-red-500 text-white";
+            v1_badge.textContent = "INVIABLE";
+        } else if (stressPct >= 45) {
+            v1_bg.className = "absolute inset-0 bg-orange-500/30 transition-colors duration-500";
+            v1_badge.className = "px-2 py-1 rounded text-xs font-bold bg-orange-500 text-white";
+            v1_badge.textContent = "ALTO RIESGO";
+        } else {
+            v1_bg.className = "absolute inset-0 bg-blue-600/20 transition-colors duration-500";
+            v1_badge.className = "px-2 py-1 rounded text-xs font-bold bg-blue-500 text-white";
+            v1_badge.textContent = "SEGURO";
+        }
+
+        // --- FASE 2: COSTES OBRA NUEVA ---
+        const finalBase = getVal('newPrice') * (1 + overcostPct/100);
+        const totalCost = finalBase + (finalBase * getVal('iva')/100) + (finalBase * getVal('ajd')/100) + (finalBase * getVal('notary')/100) + getVal('furniture');
+        const familyLoan = getVal('familyLoan');
+        const alreadyPaid = familyLoan + (builderQuota * buildMonths);
+        const pendingAtDelivery = totalCost - alreadyPaid;
+
+        // Variables comunes fiscales
+        const origPrice = getVal('origPrice');
+        const cancelCost = getVal('cancelCost');
+        const landValue = getVal('cadastralTotal') * (getVal('landPct') / 100);
+        const plusvaliaRate = getVal('plusvaliaRate');
+        const objCoef = getVal('objCoef'); 
+        const lowerValue = Math.min(finalBase, getVal('appraisalPrice'));
+        const incomeFuture = getVal('incomeFuture');
+        const rateFuture = getVal('rate');
+        const yearsFuture = getVal('years');
+        const maxLTV = getVal('maxLTV');
+
+        // Variables de resultado del Motor de Resolución
+        let salePrice = 0, finalMortgage = 0, finalQuota = 0, finalEffort = 0, finalLtv = 0, cashForNew = 0, finalTaxes = 0;
+        let isViableV2 = true;
+        let statusMsg = "", statusClass = "";
+        const statusBox = document.getElementById('statusBox');
+        const heroLabel = document.getElementById('v2_hero_label');
+        const heroValue = document.getElementById('v2_hero_value');
+        const heroExtra = document.getElementById('v2_hero_extra');
+
+        if (calcMode === 'mode_sale') {
+            // MODO 1: OBJETIVO DE ESFUERZO -> BUSCAR PRECIO DE VENTA
+            const maxQuotaFuture = incomeFuture * (getVal('effort') / 100);
+            const newRateM = (rateFuture / 100) / 12;
+            const newMonths = yearsFuture * 12;
+            let maxLoanIncome = newRateM > 0 ? maxQuotaFuture * (1 - Math.pow(1 + newRateM, -newMonths)) / newRateM : maxQuotaFuture * newMonths;
+            
+            finalMortgage = Math.min(maxLoanIncome, lowerValue * (maxLTV / 100));
+            cashForNew = pendingAtDelivery - finalMortgage;
+            const netCashNeededFromSale = cashForNew + familyLoan;
+            
+            salePrice = Math.max(futureCancel + cancelCost, origPrice * 0.5);
+            isViableV2 = false;
+
+            if (netCashNeededFromSale <= 0) {
+                isViableV2 = true;
+                salePrice = origPrice; // Va sobrado
+            } else {
+                for (let i = 0; i < 20000; i++) {
+                    let realGain = salePrice - origPrice;
+                    let realBase = realGain > 0 ? realGain * (getVal('landPct') / 100) : 0;
+                    let plusvalia = (realGain <= 0) ? 0 : Math.min(realBase, landValue * objCoef) * (plusvaliaRate / 100);
+                    let irpf = isExemptIRPF ? 0 : calculateIRPF(Math.max(0, realGain - plusvalia));
+                    
+                    if ((salePrice - futureCancel - cancelCost - plusvalia - irpf) >= netCashNeededFromSale) {
+                        isViableV2 = true;
+                        finalTaxes = plusvalia + irpf + cancelCost;
+                        break;
+                    }
+                    salePrice += 150;
+                }
+            }
+
+            finalQuota = getQuota(finalMortgage, rateFuture, yearsFuture);
+            finalEffort = incomeFuture > 0 ? (finalQuota / incomeFuture) * 100 : 0;
+            finalLtv = lowerValue > 0 ? (finalMortgage / lowerValue) * 100 : 0;
+            
+            heroLabel.textContent = "Precio Mínimo de Venta Necesario";
+            if (!isViableV2) {
+                statusClass = "bg-red-500/20 text-red-400 border-red-500";
+                statusMsg = "❌ OPERACIÓN INVIABLE (Límites Superados)";
+                heroValue.textContent = 'Inviable';
+                heroValue.classList.replace('text-emerald-400', 'text-red-500');
+                heroExtra.textContent = '';
+            } else {
+                heroValue.textContent = cashForNew <= 0 ? "No dependes de venta" : fmt.format(salePrice);
+                heroValue.classList.replace('text-red-500', 'text-emerald-400');
+                heroExtra.textContent = 'Respetando tu esfuerzo del ' + getVal('effort') + '%';
+                
+                statusClass = cashForNew <= 0 ? "bg-emerald-500/20 text-emerald-400 border-emerald-500" : "bg-indigo-500/20 text-indigo-300 border-indigo-500";
+                statusMsg = cashForNew <= 0 ? "✅ VIABLE (Sin Hipoteca)" : "✅ OPERACIÓN VIABLE";
+            }
+
+        } else {
+            // MODO 2: FIJAR PRECIO VENTA -> CALCULAR HIPOTECA
+            salePrice = getVal('expectedSale');
+            let realGain = salePrice - origPrice;
+            let realBase = realGain > 0 ? realGain * (getVal('landPct') / 100) : 0;
+            let plusvalia = (realGain <= 0) ? 0 : Math.min(realBase, landValue * objCoef) * (plusvaliaRate / 100);
+            let irpf = isExemptIRPF ? 0 : calculateIRPF(Math.max(0, realGain - plusvalia));
+            finalTaxes = plusvalia + irpf + cancelCost;
+            
+            let netLiquidity = salePrice - futureCancel - finalTaxes;
+            cashForNew = netLiquidity - familyLoan;
+            finalMortgage = pendingAtDelivery - cashForNew;
+            
+            finalQuota = getQuota(Math.max(0, finalMortgage), rateFuture, yearsFuture);
+            finalEffort = incomeFuture > 0 ? (finalQuota / incomeFuture) * 100 : 0;
+            finalLtv = lowerValue > 0 ? (finalMortgage / lowerValue) * 100 : 0;
+
+            heroLabel.textContent = "Hipoteca y Cuota Resultante";
+            heroValue.classList.replace('text-red-500', 'text-emerald-400');
+            
+            if (finalMortgage <= 0) {
+                finalMortgage = 0;
+                heroValue.textContent = "Sin Hipoteca";
+                heroExtra.textContent = 'La venta cubre todo el importe restante';
+                statusClass = "bg-emerald-500/20 text-emerald-400 border-emerald-500";
+                statusMsg = "✅ OPERACIÓN VIABLE (Pagas al contado)";
+            } else if (finalLtv > maxLTV) {
+                isViableV2 = false;
+                heroValue.textContent = fmt.format(finalQuota) + ' /mes';
+                heroValue.classList.replace('text-emerald-400', 'text-red-500');
+                heroExtra.textContent = `LTV: ${finalLtv.toFixed(1)}% (Máx banco: ${maxLTV}%)`;
+                statusClass = "bg-red-500/20 text-red-400 border-red-500";
+                statusMsg = "❌ INVIABLE BANCARIO (LTV Excedido)";
+            } else {
+                heroValue.textContent = fmt.format(finalQuota) + ' /mes';
+                heroExtra.textContent = `Esfuerzo Resultante: ${finalEffort.toFixed(1)}%`;
+                if (finalEffort > 40) {
+                    statusClass = "bg-orange-500/20 text-orange-400 border-orange-500";
+                    statusMsg = "⚠️ VIABLE BANCARIO PERO ALTO RIESGO (>40% Esfuerzo)";
+                } else {
+                    statusClass = "bg-indigo-500/20 text-indigo-300 border-indigo-500";
+                    statusMsg = "✅ OPERACIÓN VIABLE BANCARIAMENTE";
+                }
+            }
+        }
+
+        // RENDERIZADO DOM
+        document.getElementById('res_totalCost').textContent = fmt.format(totalCost);
+        document.getElementById('res_alreadyPaid').textContent = fmt.format(alreadyPaid);
+        document.getElementById('res_v2_fam').textContent = fmt.format(familyLoan);
+        document.getElementById('res_v2_prom').textContent = fmt.format(builderQuota * buildMonths);
+        
+        statusBox.className = `mb-4 text-center py-2 rounded font-bold text-sm tracking-wide border ${statusClass}`;
+        statusBox.textContent = statusMsg;
+
+        if (!isViableV2 && calcMode === 'mode_sale') {
+            document.getElementById('res_newMortgage').textContent = '---';
+            document.getElementById('res_v2_newQuota').textContent = '---';
+            document.getElementById('res_v2_ltvReal').textContent = '---';
+            document.getElementById('res_cashForNew').textContent = '---';
+            document.getElementById('res_famReturn').textContent = '---';
+            document.getElementById('res_mortgageCancel').textContent = '---';
+            document.getElementById('res_taxes').textContent = '---';
+            updateChart([0, 0, 0]);
+        } else {
+            document.getElementById('res_newMortgage').textContent = fmt.format(Math.max(0, finalMortgage));
+            document.getElementById('res_v2_newQuota').textContent = finalMortgage > 0 ? fmt.format(finalQuota) + ' /mes' : '0 € /mes';
+            document.getElementById('res_v2_ltvReal').textContent = Math.max(0, finalLtv).toFixed(1) + ' %';
+            
+            // Destino del Dinero Venta (En Modo 2, cashForNew puede ser altísimo si vendemos muy caro, topamos a lo que hace falta)
+            let actualCashApplied = Math.min(Math.max(0, cashForNew), pendingAtDelivery);
+            document.getElementById('res_cashForNew').textContent = fmt.format(actualCashApplied);
+            document.getElementById('res_famReturn').textContent = '-' + fmt.format(familyLoan);
+            document.getElementById('res_mortgageCancel').textContent = '-' + fmt.format(futureCancel);
+            document.getElementById('res_taxes').textContent = '-' + fmt.format(finalTaxes);
+            
+            updateChart([Math.max(0, finalMortgage), actualCashApplied, alreadyPaid]);
+        }
+    }
+
+    function updateChart(dataValues) {
+        const ctx = document.getElementById('fundingChart').getContext('2d');
+        if (chartInstance) {
+            chartInstance.data.datasets[0].data = dataValues;
+            chartInstance.update();
+        } else {
+            Chart.defaults.color = '#9ca3af';
+            chartInstance = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Nueva Hipoteca', 'Liquidez Venta', 'Transición (Familia+Cuotas)'],
+                    datasets: [{
+                        data: dataValues,
+                        backgroundColor: ['#4f46e5', '#10b981', '#3b82f6'],
+                        borderWidth: 0, hoverOffset: 4
+                    }]
+                },
+                options: {
+                    responsive: true, maintainAspectRatio: false, cutout: '70%',
+                    plugins: { 
+                        legend: { position: 'right', labels: { boxWidth: 10, font: {size: 10} } } 
+                    }
+                }
+            });
+        }
+    }
+
+    document.querySelectorAll('input[data-sync], select').forEach(input => {
+        input.addEventListener('input', (e) => {
+            const syncId = e.target.getAttribute('data-sync');
+            if(syncId) {
+                const val = e.target.value;
+                document.querySelectorAll(`input[data-sync="${syncId}"]`).forEach(el => {
+                    if (el !== e.target) el.value = val;
+                });
+            }
+            calculate();
+        });
+    });
+
+    document.getElementById('periodSelect').addEventListener('change', (e) => {
+        document.getElementById('objectiveCoefNum').value = e.target.value;
+        calculate();
+    });
+    document.getElementById('irpfToggle').addEventListener('change', calculate);
+    document.getElementById('buildType').addEventListener('change', calculate);
+
+    calculate();
+</script>
+</body>
+</html>
