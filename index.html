@@ -68,9 +68,16 @@
                             <input type="number" data-sync="builderMonths" value="24" class="w-20 text-sm border border-indigo-300 bg-indigo-50 rounded p-1.5 focus:ring-blue-500 text-right font-medium">
                         </div>
                     </div>
-                    <div class="sm:col-span-2">
-                        <label class="block text-xs font-medium text-gray-500 mb-1">Préstamo Familiar Inicial (A devolver) (€)</label>
-                        <div class="flex items-center gap-3 sm:w-1/2 pr-3">
+                    <div>
+                        <label class="block text-xs font-medium text-gray-500 mb-1">Aportación Inicial (Entrada a Constructora) (€)</label>
+                        <div class="flex items-center gap-3">
+                            <input type="range" data-sync="initialPayment" min="0" max="200000" step="1000" value="50000" class="w-full">
+                            <input type="number" data-sync="initialPayment" value="50000" class="w-28 text-sm border border-gray-300 rounded p-1.5 focus:ring-blue-500 text-right">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-gray-500 mb-1">Préstamo Familiar Recibido (A devolver) (€)</label>
+                        <div class="flex items-center gap-3">
                             <input type="range" data-sync="familyLoan" min="0" max="150000" step="1000" value="50000" class="w-full">
                             <input type="number" data-sync="familyLoan" value="50000" class="w-28 text-sm border border-gray-300 rounded p-1.5 focus:ring-blue-500 text-right">
                         </div>
@@ -155,6 +162,7 @@
                     Fase 3: Hipoteca Actual y Venta (Al Cierre)
                 </h2>
                 
+                <!-- ESTE INPUT SOLO SE ACTIVA EN EL MODO 2 (Mercado Realista) -->
                 <div id="div_expectedSale" class="mb-5 opacity-40 pointer-events-none transition-all duration-300 p-3 rounded-lg border border-transparent">
                     <label class="block text-xs font-bold text-emerald-800 mb-1">Precio de Venta Estimado de Mercado (€)</label>
                     <div class="flex items-center gap-3">
@@ -249,6 +257,7 @@
             <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-5 sm:p-6 relative overflow-hidden">
                 <div class="absolute top-0 left-0 w-1 h-full bg-gray-600"></div>
                 
+                <!-- DUAL SOLVER UI -->
                 <div class="mb-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
                     <h3 class="text-xs font-bold text-gray-800 uppercase mb-3 flex items-center gap-2">
                         <svg class="w-4 h-4 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"></path></svg>
@@ -379,7 +388,7 @@
                         <span id="res_alreadyPaid" class="font-semibold text-gray-300">--- €</span>
                     </div>
                     <div class="pl-3 border-l-2 border-gray-700 space-y-1 mt-1 text-[10px] text-gray-500">
-                        <div class="flex justify-between"><span>Préstamo Familiar</span><span id="res_v2_fam">--- €</span></div>
+                        <div class="flex justify-between"><span>Entrada Inicial Promotora</span><span id="res_v2_initial">--- €</span></div>
                         <div class="flex justify-between"><span>Cuotas Mensuales (Acumuladas)</span><span id="res_v2_prom">--- €</span></div>
                     </div>
                     
@@ -502,7 +511,7 @@
         // --- VALIDADOR 1: ESTRÉS DE CAJA ---
         const incomeTrans = getVal('incomeTrans');
         const buildMonths = getVal('buildMonths');
-        const builderMonths = getVal('builderMonths'); // Nuevo Parámetro
+        const builderMonths = getVal('builderMonths');
         const builderQuota = getVal('builderQuota');
         
         // La hipoteca se sigue amortizando el tiempo que dure la construcción (buildMonths)
@@ -546,10 +555,10 @@
         const totalCost = finalBase + (finalBase * getVal('iva')/100) + (finalBase * getVal('ajd')/100) + (finalBase * getVal('notary')/100) + getVal('furniture');
         
         const familyLoan = getVal('familyLoan');
-        
-        // AQUÍ APLICAMOS EL NUEVO PARÁMETRO: builderQuota * builderMonths
+        const initialPayment = getVal('initialPayment');
         const totalBuilderQuotas = builderQuota * builderMonths; 
-        const alreadyPaid = familyLoan + totalBuilderQuotas; 
+        
+        const alreadyPaid = initialPayment + totalBuilderQuotas; 
         const pendingAtDelivery = totalCost - alreadyPaid;
 
         // Variables comunes fiscales
@@ -671,8 +680,9 @@
 
         document.getElementById('res_totalCost').textContent = fmt.format(totalCost);
         document.getElementById('res_alreadyPaid').textContent = fmt.format(alreadyPaid);
+        document.getElementById('res_v2_initial').textContent = fmt.format(initialPayment);
+        document.getElementById('res_v2_prom').textContent = fmt.format(totalBuilderQuotas);
         document.getElementById('res_v2_fam').textContent = fmt.format(familyLoan);
-        document.getElementById('res_v2_prom').textContent = fmt.format(totalBuilderQuotas); // AQUÍ REFLEJA EL NUEVO PARÁMETRO
         
         statusBox.className = `mb-4 text-center py-2 rounded font-bold text-sm tracking-wide border ${statusClass}`;
         statusBox.textContent = statusMsg;
@@ -711,7 +721,7 @@
             chartInstance = new Chart(ctx, {
                 type: 'doughnut',
                 data: {
-                    labels: ['Nueva Hipoteca', 'Liquidez Venta', 'Transición (Familia+Cuotas)'],
+                    labels: ['Nueva Hipoteca', 'Liquidez Venta', 'Transición (Entrada+Cuotas)'],
                     datasets: [{
                         data: dataValues,
                         backgroundColor: ['#4f46e5', '#10b981', '#3b82f6'],
